@@ -1,0 +1,1 @@
+{"name":"suraj-portfolio","private":true,"scripts":{"dev":"concurrently -k \"npm:dev --prefix server\" \"npm:dev --prefix client\"","build":"npm run build --prefix client","start":"npm start --prefix server","install:all":"npm i && npm i --prefix client && npm i --prefix server"},"devDependencies":{"concurrently":"^9.0.1"}}

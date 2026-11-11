@@ -22,11 +22,11 @@ const limited = (ip) => {
 const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
 
 app.post('/api/contact', async (req, res) => {
-  const { name = '', email = '', message = '', website = '' } = req.body || {}
-  console.log(name,email,message, website)
-  console.log("this is website",website)
+  const { name = '', email = '', message = ''} = req.body || {}
+  console.log(name,email,message, )
 
-  if (website) return res.json({ ok: true }) // honeypot
+
+
   const n = String(name).trim(), e = String(email).trim(), m = String(message).trim()
   if (n.length < 2 || n.length > 80) return res.status(400).json({ error: 'Enter your name (2–80 characters).' })
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)) return res.status(400).json({ error: 'Enter a valid email address.' })

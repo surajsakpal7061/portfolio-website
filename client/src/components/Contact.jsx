@@ -11,7 +11,7 @@ const check = (f) => {
   return e
 }
 export default function Contact() {
-  const [f, setF] = useState({ name: '', email: '', message: '', website: '' })
+  const [f, setF] = useState({ name: '', email: '', message: '' })
   const [err, setErr] = useState({})
   const [st, setSt] = useState({ s: 'idle', m: '' })
   const on = (k) => (e) => setF({ ...f, [k]: e.target.value })
@@ -34,7 +34,7 @@ export default function Contact() {
       const d = await r.json().catch((err) => (console.log(err)))
       console.log(d)
       if (!r.ok) throw new Error(d.error || 'Something went wrong.')
-      setSt({ s: 'done', m: 'Message sent. I will reply to your email soon.' }); setF({ name: '', email: '', message: '', website: '' })
+      setSt({ s: 'done', m: 'Message sent. I will reply to your email soon.' }); setF({ name: '', email: '', message: '' })
     } catch (x) { setSt({ s: 'error', m: x.message }) }
   }
   const field = (k, label, Tag = 'input', extra = {}) => (
@@ -59,7 +59,6 @@ export default function Contact() {
           {field('name', 'Your name', 'input', { autoComplete: 'name' })}
           {field('email', 'Your email', 'input', { type: 'email', autoComplete: 'email' })}
           {field('message', 'Tell me about the project', 'textarea', { rows: 4 })}
-          <input className="hp" tabIndex={-1} autoComplete="off" aria-hidden="true" value={f.website} onChange={on('website')} name="website" />
           <Magnetic><button className="btn" disabled={st.s === 'sending'}>{st.s === 'sending' ? 'Sending…' : 'Send message'}</button></Magnetic>
           <p className={`msg ${st.s}`} role="status" aria-live="polite">{st.m}</p>
         </form>

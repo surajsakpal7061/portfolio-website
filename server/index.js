@@ -43,14 +43,20 @@ app.post('/api/contact', async (req, res) => {
     if (smtpHost && smtpUser && smtpPass) {
 
       const transporter = nodemailer.createTransport({
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpPort === 465,
+        host: process.env.SMTP_HOST,
+        port: Number(process.env.SMTP_PORT) || 465,
+        secure: Number(process.env.SMTP_PORT) === 465,
+
         auth: {
-          user: smtpUser,
-          pass: smtpPass
-        }
+          user: process.env.SMTP_USER,
+          pass: process.env.SMTP_PASS
+        },
+
+        connectionTimeout: 10000,
+        greetingTimeout: 10000,
+        socketTimeout: 15000
       });
+
 
       console.log("1. API started");
 

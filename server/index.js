@@ -24,6 +24,7 @@ const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>
 app.post('/api/contact', async (req, res) => {
   const { name = '', email = '', message = '', website = '' } = req.body || {}
   console.log(name,email,message, website)
+  console.log("this is website",website)
 
   if (website) return res.json({ ok: true }) // honeypot
   const n = String(name).trim(), e = String(email).trim(), m = String(message).trim()

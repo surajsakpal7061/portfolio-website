@@ -23,6 +23,8 @@ const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>
 
 app.post('/api/contact', async (req, res) => {
   const { name = '', email = '', message = '', website = '' } = req.body || {}
+  console.log(name,email,message, website)
+
   if (website) return res.json({ ok: true }) // honeypot
   const n = String(name).trim(), e = String(email).trim(), m = String(message).trim()
   if (n.length < 2 || n.length > 80) return res.status(400).json({ error: 'Enter your name (2–80 characters).' })

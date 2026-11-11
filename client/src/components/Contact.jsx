@@ -21,7 +21,15 @@ export default function Contact() {
     if (Object.keys(v).length) return
     setSt({ s: 'sending', m: '' })
     try {
-      const r = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(f) })
+      const API_URL = import.meta.env.VITE_API_URL;
+
+      const r = await fetch(`${API_URL}/api/contact`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
       const d = await r.json().catch(() => ({}))
       if (!r.ok) throw new Error(d.error || 'Something went wrong.')
       setSt({ s: 'done', m: 'Message sent. I will reply to your email soon.' }); setF({ name: '', email: '', message: '', website: '' })

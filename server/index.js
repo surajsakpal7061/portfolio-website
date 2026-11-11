@@ -1,58 +1,110 @@
-import 'dotenv/config'
-import express from 'express'
-import cors from 'cors'
-import nodemailer from 'nodemailer'
-import fs from 'fs'
-import path from 'path'
-import { fileURLToPath } from 'url'
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
-const app = express()
-app.use(cors())
-app.use(express.json({ limit: '10kb' }))
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import nodemailer from 'nodemailer';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
-const hits = new Map() // simple per-IP rate limit: 5 messages / 10 min
-const limited = (ip) => {
-  const now = Date.now()
-  const list = (hits.get(ip) || []).filter((t) => now - t < 600000)
-  list.push(now)
-  hits.set(ip, list)
-  return list.length > 5
-}
-const esc = (s) => s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]))
+const app = express();
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+app.use(cors());
+app.use(express.json());
+
+// Contact form API
 app.post('/api/contact', async (req, res) => {
-  const { name = '', email = '', message = ''} = req.body || {}
-  console.log(name,email,message, )
+    const name = req.body.name;
+    const email = req.body.email;
+    const message = req.body.message;
 
-
-
-  const n = String(name).trim(), e = String(email).trim(), m = String(message).trim()
-  if (n.length < 2 || n.length > 80) return res.status(400).json({ error: 'Enter your name (2–80 characters).' })
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e)) return res.status(400).json({ error: 'Enter a valid email address.' })
-  if (m.length < 10 || m.length > 2000) return res.status(400).json({ error: 'Message must be 10–2000 characters.' })
-  if (limited(req.ip)) return res.status(429).json({ error: 'Too many messages. Try again in a few minutes.' })
-  try {
-    const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, MAIL_TO } = process.env
-    if (SMTP_HOST && SMTP_USER && SMTP_PASS) {
-      const t = nodemailer.createTransport({ host: SMTP_HOST, port: +SMTP_PORT || 465, secure: (+SMTP_PORT || 465) === 465, auth: { user: SMTP_USER, pass: SMTP_PASS } })
-      await t.sendMail({ from: `"Portfolio" <${SMTP_USER}>`, to: MAIL_TO || SMTP_USER, replyTo: e, subject: `Portfolio message from ${n}`, text: `${n} <${e}>\n\n${m}`, html: `<p><b>${esc(n)}</b> &lt;${esc(e)}&gt;</p><p>${esc(m).replace(/\n/g, '<br>')}</p>` })
-    } else {
-      const file = path.join(__dirname, 'messages.json')
-      const all = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : []
-      all.push({ name: n, email: e, message: m, at: new Date().toISOString() })
-      fs.writeFileSync(file, JSON.stringify(all, null, 2))
+    // Check form details
+    if (!name || name.trim().length < 2) {
+        return res.status(400).json({ error: 'Please enter your name.' });
     }
-    res.json({ ok: true })
-  } catch (err) {
-    console.error(err)
-    res.status(500).json({ error: 'Could not send right now. Email me directly instead.' })
-  }
-})
 
-const dist = path.join(__dirname, '../client/dist')
-if (fs.existsSync(dist)) {
-  app.use(express.static(dist))
-  app.get('*', (_, r) => r.sendFile(path.join(dist, 'index.html')))
+    if (!email || !email.includes('@')) {
+        return res.status(400).json({ error: 'Please enter a valid email.' });
+    }
+
+    if (!message || message.trim().length < 10) {
+        return res.status(400).json({ error: 'Message must be at least 10 characters.' });
+    }
+
+    try {
+        const smtpUser = process.env.SMTP_USER;
+        const smtpPass = process.env.SMTP_PASS;
+        const smtpHost = process.env.SMTP_HOST;
+        const smtpPort = Number(process.env.SMTP_PORT) || 465;
+
+        // Send email if SMTP details are available
+        if (smtpHost && smtpUser && smtpPass) {
+
+            const transporter = nodemailer.createTransport({
+                host: smtpHost,
+                port: smtpPort,
+                secure: smtpPort === 465,
+                auth: {
+                    user: smtpUser,
+                    pass: smtpPass
+                }
+            });
+
+            await transporter.sendMail({
+                from: smtpUser,
+                to: process.env.MAIL_TO || smtpUser,
+                replyTo: email,
+                subject: 'New message from ' + name,
+                text: name + '\n' + email + '\n\n' + message
+            });
+
+        } else {
+            // Save message in a JSON file if email is not configured
+            const filePath = path.join(__dirname, 'messages.json');
+
+            let messages = [];
+
+            if (fs.existsSync(filePath)) {
+                messages = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            }
+
+            messages.push({
+                name: name,
+                email: email,
+                message: message,
+                date: new Date().toISOString()
+            });
+
+            fs.writeFileSync(filePath, JSON.stringify(messages, null, 2));
+        }
+
+        res.json({ success: true, message: 'Message sent successfully!' });
+
+    } catch (error) {
+        console.log(error);
+
+        res.status(500).json({
+            error: 'Something went wrong. Please try again.'
+        });
+    }
+});
+
+// Serve frontend files
+const distFolder = path.join(__dirname, '../client/dist');
+
+if (fs.existsSync(distFolder)) {
+    app.use(express.static(distFolder));
+
+    app.get('*', (req, res) => {
+        res.sendFile(path.join(distFolder, 'index.html'));
+    });
 }
-app.listen(process.env.PORT || 5000, () => console.log('Server running'))
+
+// Start server
+const PORT = process.env.PORT || 5000;
+
+app.listen(PORT, () => {
+    console.log('Server is running on port ' + PORT);
+});

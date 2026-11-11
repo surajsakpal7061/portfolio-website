@@ -29,7 +29,7 @@ export default function Contact() {
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(formData)
+        body:JSON.stringify(f)
       });
       const d = await r.json().catch((err) => (console.log(err)))
       console.log(d)

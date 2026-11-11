@@ -22,6 +22,7 @@ export default function Contact() {
     setSt({ s: 'sending', m: '' })
     try {
       const API_URL = import.meta.env.VITE_API_URL;
+      console.log(API_URL)
 
       const r = await fetch(`${API_URL}/api/contact`, {
         method: 'POST',
@@ -30,7 +31,8 @@ export default function Contact() {
         },
         body: JSON.stringify(formData)
       });
-      const d = await r.json().catch(() => ({}))
+      const d = await r.json().catch((err) => (console.log(err)))
+      console.log(d)
       if (!r.ok) throw new Error(d.error || 'Something went wrong.')
       setSt({ s: 'done', m: 'Message sent. I will reply to your email soon.' }); setF({ name: '', email: '', message: '', website: '' })
     } catch (x) { setSt({ s: 'error', m: x.message }) }
